@@ -79,8 +79,8 @@ class EnvelopeApp(tk.Tk):
         entrada = tk.StringVar()
         pub_dest = tk.StringVar()
         priv_rem = tk.StringVar()
-        saida_msg = tk.StringVar(value="mensagem.enc")
-        saida_chave = tk.StringVar(value="chave.enc")
+        saida_msg = tk.StringVar(value="mensagem.cif")
+        saida_chave = tk.StringVar(value="chave.env")
         saida_assinatura = tk.StringVar(value="assinatura.sig")
 
         self._file_row(tab, 0, "Mensagem em claro", entrada)

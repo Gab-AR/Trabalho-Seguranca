@@ -127,8 +127,23 @@ def aes_decrypt(ciphertext: bytes, key: bytes, iv: bytes) -> bytes:
         ) from exc
 
 
+def get_plaintext_from_input(input_str: str, encoding: str = "utf-8") -> bytes:
+    """
+    Obtem o texto em claro.
+    Se input_str for um arquivo existente, le o conteudo.
+    Caso contrario, trata input_str como o proprio texto.
+    """
+    path = Path(input_str)
+    if path.is_file():
+        print(f"Lendo mensagem do arquivo: {input_str}")
+        return read_bytes(input_str)
+
+    print("Usando texto do campo de entrada como mensagem.")
+    return input_str.encode(encoding)
+
+
 def create_envelope(args: argparse.Namespace) -> None:
-    plaintext = read_bytes(args.entrada)
+    plaintext = get_plaintext_from_input(args.entrada)
     recipient_public_key = load_public_key(args.pub_dest)
     sender_private_key = load_private_key(args.priv_rem)
 
@@ -268,7 +283,11 @@ def build_parser() -> argparse.ArgumentParser:
         "criar-envelope",
         help="Cifra a mensagem, cifra chave+IV e gera assinatura.",
     )
-    create_parser.add_argument("--entrada", required=True, help="Arquivo de texto em claro")
+    create_parser.add_argument(
+        "--entrada",
+        required=True,
+        help="Arquivo de texto em claro ou o proprio texto da mensagem",
+    )
     create_parser.add_argument("--pub-dest", required=True, help="Chave publica do destinatario")
     create_parser.add_argument("--priv-rem", required=True, help="Chave privada do remetente")
     create_parser.add_argument("--saida-msg", required=True, help="Arquivo da mensagem cifrada")
