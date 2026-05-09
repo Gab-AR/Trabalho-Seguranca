@@ -216,7 +216,7 @@ def printable_text(data: bytes, encoding: str) -> str:
     )
 
 
-def open_envelope(args: argparse.Namespace) -> None:
+def open_envelope(args: argparse.Namespace) -> bool:
     encrypted_message = b64_decode_file(args.msg)
     encrypted_key_iv = b64_decode_file(args.chave)
     signature = b64_decode_file(args.assinatura)
@@ -262,6 +262,8 @@ def open_envelope(args: argparse.Namespace) -> None:
     print(f"Assinatura valida: {'SIM' if valid_signature else 'NAO'}")
     print("Texto decifrado:")
     print(printable_text(plaintext, args.encoding))
+
+    return valid_signature
 
 
 def build_parser() -> argparse.ArgumentParser:

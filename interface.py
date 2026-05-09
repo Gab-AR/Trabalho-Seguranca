@@ -3,6 +3,7 @@ import contextlib
 import io
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+from pathlib import Path
 
 import main as envelope
 
@@ -57,7 +58,7 @@ class EnvelopeApp(tk.Tk):
         self._file_row(tab, 1, "Chave privada", priv_var, save=True, pem=True)
         self._file_row(tab, 2, "Chave publica", pub_var, save=True, pem=True)
 
-        ttk.Button(
+        self.generate_keys_button = ttk.Button(
             tab,
             text="Gerar chaves",
             command=lambda: self._run_action(
@@ -69,7 +70,8 @@ class EnvelopeApp(tk.Tk):
                 ),
                 "Chaves geradas com sucesso.",
             ),
-        ).grid(row=3, column=1, sticky="e", pady=14)
+        )
+        self.generate_keys_button.grid(row=3, column=1, sticky="e", pady=14)
 
     def _build_create_tab(self, notebook: ttk.Notebook) -> None:
         tab = ttk.Frame(notebook, padding=12)
@@ -90,7 +92,7 @@ class EnvelopeApp(tk.Tk):
         self._file_row(tab, 4, "Saida chave+IV", saida_chave, save=True)
         self._file_row(tab, 5, "Saida assinatura", saida_assinatura, save=True)
 
-        ttk.Button(
+        self.create_envelope_button = ttk.Button(
             tab,
             text="Criar envelope",
             command=lambda: self._run_action(
@@ -105,7 +107,8 @@ class EnvelopeApp(tk.Tk):
                 ),
                 "Envelope criado com sucesso.",
             ),
-        ).grid(row=6, column=1, sticky="e", pady=14)
+        )
+        self.create_envelope_button.grid(row=6, column=1, sticky="e", pady=14)
 
     def _build_open_tab(self, notebook: ttk.Notebook) -> None:
         tab = ttk.Frame(notebook, padding=12)
@@ -130,7 +133,7 @@ class EnvelopeApp(tk.Tk):
         ttk.Label(tab, text="Encoding exibicao").grid(row=6, column=0, sticky="w", pady=6)
         ttk.Entry(tab, textvariable=encoding).grid(row=6, column=1, sticky="ew", pady=6, padx=6)
 
-        ttk.Button(
+        self.open_envelope_button = ttk.Button(
             tab,
             text="Abrir envelope",
             command=lambda: self._run_action(
@@ -146,7 +149,13 @@ class EnvelopeApp(tk.Tk):
                 ),
                 "Envelope aberto com sucesso.",
             ),
-        ).grid(row=7, column=1, sticky="e", pady=14)
+        )
+        self.open_envelope_button.grid(row=7, column=1, sticky="e", pady=14)
+
+        status_frame = ttk.Frame(tab)
+        status_frame.grid(row=8, column=0, columnspan=3, pady=10)
+        self.signature_status_label = ttk.Label(status_frame, text="", font=("Helvetica", 16))
+        self.signature_status_label.pack()
 
     def _file_row(
         self,
@@ -183,27 +192,65 @@ class EnvelopeApp(tk.Tk):
             selected = filedialog.askopenfilename(filetypes=filetypes)
 
         if selected:
+            if pem and not save and not selected.lower().endswith(".pem"):
+                messagebox.showwarning(
+                    "Extensão de Arquivo Incomum",
+                    f"O arquivo selecionado '{Path(selected).name}' não termina com .pem.\n\n"
+                    "Chaves criptográficas geralmente usam a extensão .pem. "
+                    "Verifique se este é o arquivo correto.",
+                )
+
             variable.set(selected)
 
     def _run_action(self, func, args: argparse.Namespace, success_message: str) -> None:
+        self.signature_status_label.config(text="")
         if not self._validate_required(args):
             return
 
+        self._set_buttons_state("disabled")
+        self.update_idletasks()
+
+        result = None
         stdout = io.StringIO()
+        exc_info = None
+
         try:
             with contextlib.redirect_stdout(stdout):
-                func(args)
+                result = func(args)
         except envelope.EnvelopeError as exc:
-            self._write_output(stdout.getvalue())
-            messagebox.showerror("Erro", str(exc))
-            return
+            exc_info = ("Erro", str(exc))
         except Exception as exc:
+            exc_info = ("Erro Inesperado", str(exc))
+        finally:
+            self._set_buttons_state("normal")
             self._write_output(stdout.getvalue())
-            messagebox.showerror("Erro inesperado", str(exc))
+
+        if exc_info:
+            title, msg = exc_info
+            messagebox.showerror(title, msg)
             return
 
-        self._write_output(stdout.getvalue())
-        messagebox.showinfo("Sucesso", success_message)
+        # Se chegou aqui, nao houve erro
+        if func is envelope.open_envelope:
+            if result:  # Assinatura valida (True)
+                self.signature_status_label.config(text="✅ Assinatura Válida", foreground="green")
+                messagebox.showinfo(
+                    "Sucesso", "Envelope aberto com sucesso e a assinatura foi verificada."
+                )
+            else:  # Assinatura invalida (False)
+                self.signature_status_label.config(text="❌ Assinatura INVÁLIDA", foreground="red")
+                messagebox.showwarning(
+                    "Assinatura Inválida",
+                    "AVISO: A assinatura digital é INVÁLIDA.\n\nO envelope foi aberto, mas o conteúdo pode ter sido alterado ou não se origina do remetente esperado. O arquivo de saída foi salvo, mas use-o com extrema cautela.",
+                )
+        else:
+            messagebox.showinfo("Sucesso", success_message)
+
+    def _set_buttons_state(self, state: str) -> None:
+        """'normal' ou 'disabled'."""
+        self.generate_keys_button.config(state=state)
+        self.create_envelope_button.config(state=state)
+        self.open_envelope_button.config(state=state)
 
     def _validate_required(self, args: argparse.Namespace) -> bool:
         missing = [

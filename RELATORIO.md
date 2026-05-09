@@ -8,6 +8,8 @@ Os arquivos criptograficos gerados pelo programa usam Base64:
 - chave de sessao + IV cifrados;
 - assinatura digital.
 
+Optamos por Base64 por ser um formato mais compacto que o hexadecimal (usa cerca de 33% menos espaco) para representar dados binarios, alem de ser amplamente suportado em diversas plataformas e ferramentas.
+
 A mensagem de entrada (seja de um arquivo ou texto direto) e o arquivo decifrado sao tratados como texto em claro.
 
 ## Algoritmos e parametros
@@ -53,6 +55,8 @@ A janela possui tres abas:
 - criacao do envelope;
 - abertura do envelope.
 
+A interface também alerta o usuário com um aviso caso um arquivo selecionado para uma chave não possua a extensão `.pem`, ajudando a prevenir a seleção de arquivos incorretos.
+
 ## Geracao de chaves
 
 Exemplo para gerar chaves do destinatario:
@@ -73,30 +77,30 @@ O campo `--entrada` pode ser tanto um arquivo de texto quanto a propria mensagem
 
 Exemplo usando um arquivo de entrada:
 ```bash
-python main.py criar-envelope ^
-  --entrada mensagem.txt ^
-  --pub-dest dest_pub.pem ^
-  --priv-rem rem_priv.pem ^
-  --saida-msg mensagem.cif ^
-  --saida-chave chave.env ^
+python main.py criar-envelope \
+  --entrada mensagem.txt \
+  --pub-dest dest_pub.pem \
+  --priv-rem rem_priv.pem \
+  --saida-msg mensagem.cif \
+  --saida-chave chave.env \
   --saida-assinatura assinatura.sig
 ```
 
 Saidas:
 
-- `mensagem.enc`: mensagem cifrada em Base64;
-- `chave.enc`: chave AES + IV cifrados com RSA em Base64;
+- `mensagem.cif`: mensagem cifrada em Base64;
+- `chave.env`: chave AES + IV cifrados com RSA em Base64;
 - `assinatura.sig`: assinatura digital em Base64.
 
 ## Abertura do envelope
 
 ```bash
-python main.py abrir-envelope ^
-  --msg mensagem.enc ^
-  --chave chave.enc ^
-  --assinatura assinatura.sig ^
-  --priv-dest dest_priv.pem ^
-  --pub-rem rem_pub.pem ^
+python main.py abrir-envelope \
+  --msg mensagem.cif \
+  --chave chave.env \
+  --assinatura assinatura.sig \
+  --priv-dest dest_priv.pem \
+  --pub-rem rem_pub.pem \
   --saida mensagem_aberta.txt
 ```
 
