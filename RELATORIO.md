@@ -8,7 +8,7 @@ Os arquivos criptograficos gerados pelo programa usam Base64:
 - chave de sessao + IV cifrados;
 - assinatura digital.
 
-O arquivo de entrada e o arquivo decifrado sao tratados como texto em claro.
+A mensagem de entrada (seja de um arquivo ou texto direto) e o arquivo decifrado sao tratados como texto em claro.
 
 ## Algoritmos e parametros
 
@@ -69,13 +69,16 @@ python main.py gerar-chaves --tamanho 2048 --privada rem_priv.pem --publica rem_
 
 ## Criacao do envelope
 
+O campo `--entrada` pode ser tanto um arquivo de texto quanto a propria mensagem em texto claro, entre aspas.
+
+Exemplo usando um arquivo de entrada:
 ```bash
 python main.py criar-envelope ^
   --entrada mensagem.txt ^
   --pub-dest dest_pub.pem ^
   --priv-rem rem_priv.pem ^
-  --saida-msg mensagem.enc ^
-  --saida-chave chave.enc ^
+  --saida-msg mensagem.cif ^
+  --saida-chave chave.env ^
   --saida-assinatura assinatura.sig
 ```
 

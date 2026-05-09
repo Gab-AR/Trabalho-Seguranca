@@ -147,6 +147,12 @@ def create_envelope(args: argparse.Namespace) -> None:
     recipient_public_key = load_public_key(args.pub_dest)
     sender_private_key = load_private_key(args.priv_rem)
 
+    if recipient_public_key.key_size < 1024:
+        raise EnvelopeError(
+            f"A chave publica do destinatario e muito pequena ({recipient_public_key.key_size} bits). "
+            "Use chaves de 1024 ou 2048 bits."
+        )
+
     aes_key = os.urandom(AES_KEY_SIZE_BYTES)
     iv = os.urandom(AES_IV_SIZE_BYTES)
 
