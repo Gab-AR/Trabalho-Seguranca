@@ -256,8 +256,6 @@ def open_envelope(args: argparse.Namespace) -> bool:
     write_bytes(args.saida, plaintext)
 
     print("Envelope aberto com sucesso.")
-    print(f"Chave AES (hex): {aes_key.hex()}")
-    print(f"IV (hex): {iv.hex()}")
     print(f"Arquivo em claro gerado: {args.saida}")
     print(f"Assinatura valida: {'SIM' if valid_signature else 'NAO'}")
     print("Texto decifrado:")
